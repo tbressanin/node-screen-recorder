@@ -1,5 +1,4 @@
 node_modules
 package-lock.json
-test.*
+dist
 *.mp4
-test.mp4

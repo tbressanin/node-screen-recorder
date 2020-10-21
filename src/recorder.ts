@@ -3,7 +3,7 @@ const util = require('util')
 const { execFile } = require('child_process')
 const execFilePromise = util.promisify(execFile)
 
-function buildFFMPEGArgs(fileName, options = {}) {
+function buildFFMPEGArgs(fileName: string, options: any = {}) {
   const args = ['-y'] // Override existing files
   if (options.loglevel) {
     args.push('-loglevel', options.loglevel)
@@ -24,7 +24,7 @@ function buildFFMPEGArgs(fileName, options = {}) {
     // Construct the input URL:
     options.inputFormat === 'x11grab'
       ? `${options.hostname || ''}:${options.display}`
-      : buildURL(options)
+      : ''
   )
   if (options.videoFilter) {
     args.push('-vf', options.videoFilter)
@@ -39,7 +39,7 @@ function buildFFMPEGArgs(fileName, options = {}) {
   return args
 }
 
-function recordScreen(fileName, options) {
+export function recordScreen(fileName: string, options: any) {
   const args = buildFFMPEGArgs(
     fileName,
     Object.assign(
@@ -53,15 +53,15 @@ function recordScreen(fileName, options) {
       options
     )
   )
-  let recProcess
+  let recProcess: any;
   /**async
    * Executes the recording process.
    *
    * @param {Function} resolve Success callback
    * @param {Function} reject Failure callback
    */
-  function recordingExecutor(resolve, reject) {
-    recProcess = execFile('ffmpeg', args, function (error, stdout, stderr) {
+  function recordingExecutor(resolve: any, reject: any) {
+    recProcess = execFile('ffmpeg', args, function (error: any, stdout: any, stderr: any) {
       recProcess = null
       // ffmpeg returns with status 255 when receiving SIGINT:
       if (error && !(error.killed && error.code === 255)) return reject(error)
@@ -81,7 +81,7 @@ function recordScreen(fileName, options) {
    * @returns {Promise<Result>} Resolves with a recording result object
    */
 
-  async function setMetadata(result) {
+  async function setMetadata(result: any) {
     if (!options.rotate) return Promise.resolve(result)
     // Metadata cannot be set when encoding, as the FFmpeg MP4 muxer has a bug
     // that prevents changing metadata: https://trac.ffmpeg.org/ticket/6370
@@ -111,25 +111,3 @@ function recordScreen(fileName, options) {
   const promise = new Promise(recordingExecutor).then(setMetadata)
   return { promise, stop }
 }
-
-const recording = recordScreen('./test.mp4', {
-  fps: 10,
-  resolution: 3286+'' + 'x1080',
-  pixelFormat: 'yuv420p',
-  videoCodec: 'h264',
-  format: 'mp4'
-})
-
-recording.promise
-  .then(result => {
-    // Screen recording is done
-    process.stdout.write(result.stdout)
-    process.stderr.write(result.stderr)
-  })
-  .catch(error => {
-    // Screen recording has failed
-    console.error(error)
-  })
-
-// As an example, stop the screen recording after 5 seconds:
-setTimeout(() => recording.stop(), 5000)
